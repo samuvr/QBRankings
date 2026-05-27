@@ -49,6 +49,12 @@ export function getTeamByAbbr(abbr: string): Team {
   return team;
 }
 
-export function teamLogoPath(abbr: string): string {
-  return `/logos/teams/${abbr}.svg`;
+// ESPN usa "wsh" para Washington en vez de "was".
+const ESPN_ABBR_OVERRIDES: Record<string, string> = {
+  WAS: "wsh",
+};
+
+export function teamLogoUrl(abbr: string): string {
+  const espnAbbr = ESPN_ABBR_OVERRIDES[abbr] ?? abbr.toLowerCase();
+  return `https://a.espncdn.com/i/teamlogos/nfl/500/${espnAbbr}.png`;
 }

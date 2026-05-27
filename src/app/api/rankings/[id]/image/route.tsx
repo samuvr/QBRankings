@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getRankingById } from "@/lib/db/client";
 import { getQbById } from "@/data/qbs";
-import { getTeamByAbbr } from "@/data/teams";
+import { getTeamByAbbr, teamLogoUrl } from "@/data/teams";
 import { getVoting } from "@/data/votings";
 
 export const runtime = "nodejs";
@@ -28,6 +28,7 @@ export async function GET(_req: Request, { params }: { params: Params }) {
       teamAbbr: qb?.teamAbbr ?? "??",
       teamColor: team?.primaryColor ?? "#222",
       teamText: team?.secondaryColor ?? "#fff",
+      logoUrl: qb ? teamLogoUrl(qb.teamAbbr) : null,
     };
   });
 
@@ -122,15 +123,35 @@ export async function GET(_req: Request, { params }: { params: Params }) {
                       justifyContent: "center",
                       width: 52,
                       height: 52,
-                      borderRadius: 999,
-                      background: r.teamColor,
-                      color: r.teamText,
-                      fontSize: 18,
-                      fontWeight: 800,
-                      border: `2px solid ${r.teamText}`,
                     }}
                   >
-                    {r.teamAbbr}
+                    {r.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+                      <img
+                        src={r.logoUrl}
+                        width={52}
+                        height={52}
+                        style={{ objectFit: "contain" }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 52,
+                          height: 52,
+                          borderRadius: 999,
+                          background: r.teamColor,
+                          color: r.teamText,
+                          fontSize: 18,
+                          fontWeight: 800,
+                          border: `2px solid ${r.teamText}`,
+                        }}
+                      >
+                        {r.teamAbbr}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
                     <span
