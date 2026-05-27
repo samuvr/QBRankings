@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { ADMIN_COOKIE_NAME } from "@/lib/auth";
+import { VOTING_IDS } from "@/data/votings";
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/", "/admin/:path*", "/api/admin/:path*"],
 };
 
 async function isAuthenticated(request: NextRequest): Promise<boolean> {
@@ -22,6 +23,17 @@ async function isAuthenticated(request: NextRequest): Promise<boolean> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Al entrar a la home, limpiamos cualquier acceso previo a una votación
+  // para que la contraseña se pida de nuevo cada vez que arranca el flujo.
+  if (pathname === "/") {
+    const response = NextResponse.next();
+    for (const v of VOTING_IDS) {
+      response.cookies.delete(`voting_access_${v}`);
+    }
+    return response;
+  }
+
   const isLoginPage = pathname === "/admin";
   const isLoginApi = pathname === "/api/admin/login";
 

@@ -21,7 +21,9 @@ export default async function SuccessPage({
   if (!ranking || ranking.voting !== voting) notFound();
 
   const meta = getVoting(voting);
-  const imageUrl = `/api/rankings/${id}/image`;
+  // Cache-bust por updated_at: cada reenvío del mismo id genera una URL nueva
+  const version = new Date(ranking.updated_at).getTime();
+  const imageUrl = `/api/rankings/${id}/image?v=${version}`;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center px-5 py-10">
