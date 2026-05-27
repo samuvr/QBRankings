@@ -72,7 +72,7 @@ export default function Home() {
         </p>
         <h1 className="mt-2 font-display text-6xl uppercase leading-[0.95]">QB Rankings</h1>
         <p className="mt-3 text-sm text-muted">
-          Ordena tu top 32 de QBs titulares y participa en la votación.
+          Elige tus favoritos y ayuda a crear el ranking global de tu comunidad.
         </p>
       </header>
 

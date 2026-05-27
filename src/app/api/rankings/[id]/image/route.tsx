@@ -14,38 +14,79 @@ const BG = "#F4EEDC";
 const FG = "#0A2240";
 const ACCENT = "#C8102E";
 const SURFACE = "#FBF7E8";
-const SURFACE_2 = "#ECE3C7";
 const BORDER = "rgba(10, 34, 64, 0.18)";
 const MUTED = "rgba(10, 34, 64, 0.6)";
 
 type Params = Promise<{ id: string }>;
 
-// Carga fuentes desde el CDN de Google Fonts.
-// Next cachea la respuesta por defecto en runtime nodejs.
-async function loadFont(url: string): Promise<ArrayBuffer> {
-  const res = await fetch(url, { cache: "force-cache" });
-  if (!res.ok) throw new Error(`Failed to load font: ${url}`);
-  return await res.arrayBuffer();
+/**
+ * Descarga una Google Font como TTF. Usamos User-Agent IE6 para forzar TTF
+ * (Satori no soporta WOFF2). Cacheado en build.
+ */
+async function loadGoogleFont(
+  family: string,
+  weight = 400,
+): Promise<ArrayBuffer | null> {
+  try {
+    const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&display=swap`;
+    const cssRes = await fetch(cssUrl, {
+      headers: { "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)" },
+      cache: "force-cache",
+    });
+    if (!cssRes.ok) return null;
+    const css = await cssRes.text();
+    const match = css.match(/src:\s*url\(([^)]+)\)\s*format\(['"](?:truetype|opentype)['"]\)/);
+    if (!match) return null;
+    const fontRes = await fetch(match[1], { cache: "force-cache" });
+    if (!fontRes.ok) return null;
+    return await fontRes.arrayBuffer();
+  } catch {
+    return null;
+  }
 }
 
-async function loadFonts() {
-  const [display, subhead, body, bodyBold, mono] = await Promise.all([
-    loadFont("https://fonts.gstatic.com/s/anton/v25/1Ptgg87LROyAm0K08i4gS7lu.ttf"),
-    loadFont("https://fonts.gstatic.com/s/archivoblack/v21/HTxqL289NzCGg4MzN6KJ7eW6CYyF_g.ttf"),
-    loadFont("https://fonts.gstatic.com/s/inter/v19/UcCO3FwrK3iLTeHuS_nVMrMxCp50ojIw2boKoduKmMEVuLyfMZg.ttf"),
-    loadFont("https://fonts.gstatic.com/s/inter/v19/UcCO3FwrK3iLTeHuS_nVMrMxCp50ojIw2boKoduKmMEVuI6fMZg.ttf"),
-    loadFont("https://fonts.gstatic.com/s/jetbrainsmono/v22/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.ttf"),
+type FontEntry = {
+  name: string;
+  data: ArrayBuffer;
+  weight: 400 | 700;
+  style: "normal";
+};
+
+async function loadAllFonts(): Promise<FontEntry[]> {
+  const [anton, archivo, inter400, inter700, mono] = await Promise.all([
+    loadGoogleFont("Anton", 400),
+    loadGoogleFont("Archivo Black", 400),
+    loadGoogleFont("Inter", 400),
+    loadGoogleFont("Inter", 700),
+    loadGoogleFont("JetBrains Mono", 400),
   ]);
-  return [
-    { name: "Anton", data: display, weight: 400 as const, style: "normal" as const },
-    { name: "ArchivoBlack", data: subhead, weight: 400 as const, style: "normal" as const },
-    { name: "Inter", data: body, weight: 400 as const, style: "normal" as const },
-    { name: "Inter", data: bodyBold, weight: 700 as const, style: "normal" as const },
-    { name: "JetBrainsMono", data: mono, weight: 400 as const, style: "normal" as const },
-  ];
+  const out: FontEntry[] = [];
+  if (anton) out.push({ name: "Anton", data: anton, weight: 400, style: "normal" });
+  if (archivo)
+    out.push({ name: "ArchivoBlack", data: archivo, weight: 400, style: "normal" });
+  if (inter400)
+    out.push({ name: "Inter", data: inter400, weight: 400, style: "normal" });
+  if (inter700)
+    out.push({ name: "Inter", data: inter700, weight: 700, style: "normal" });
+  if (mono)
+    out.push({ name: "JetBrainsMono", data: mono, weight: 400, style: "normal" });
+  return out;
 }
 
-export async function GET(_req: Request, { params }: { params: Params }) {
+function getOrigin(req: Request): string {
+  // Mejor opción: el origin del propio request
+  try {
+    const u = new URL(req.url);
+    if (u.protocol && u.host) return `${u.protocol}//${u.host}`;
+  } catch {
+    /* ignore */
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
+export async function GET(req: Request, { params }: { params: Params }) {
   const { id } = await params;
   const ranking = await getRankingById(id);
   if (!ranking) {
@@ -53,6 +94,11 @@ export async function GET(_req: Request, { params }: { params: Params }) {
   }
 
   const meta = getVoting(ranking.voting);
+  const origin = getOrigin(req);
+  const votingLogoSrc = meta.logoUrl.startsWith("http")
+    ? meta.logoUrl
+    : `${origin}${meta.logoUrl}`;
+
   const rows = ranking.positions.map((qbId, idx) => {
     const qb = getQbById(qbId);
     const team = qb ? getTeamByAbbr(qb.teamAbbr) : null;
@@ -69,203 +115,225 @@ export async function GET(_req: Request, { params }: { params: Params }) {
   const leftCol = rows.slice(0, 16);
   const rightCol = rows.slice(16, 32);
 
-  const fonts = await loadFonts();
+  const fonts = await loadAllFonts();
+  // Si Anton no cargó, usamos system-ui como fallback.
+  const fontDisplay = fonts.some((f) => f.name === "Anton") ? "Anton" : "Inter";
+  const fontSubhead = fonts.some((f) => f.name === "ArchivoBlack")
+    ? "ArchivoBlack"
+    : "Inter";
+  const fontMono = fonts.some((f) => f.name === "JetBrainsMono")
+    ? "JetBrainsMono"
+    : "Inter";
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: WIDTH,
-          height: HEIGHT,
-          display: "flex",
-          flexDirection: "column",
-          background: BG,
-          color: FG,
-          fontFamily: "Inter",
-          padding: 60,
-        }}
-      >
-        {/* Header */}
+  try {
+    return new ImageResponse(
+      (
         <div
           style={{
+            width: WIDTH,
+            height: HEIGHT,
             display: "flex",
-            alignItems: "center",
-            gap: 24,
-            paddingBottom: 24,
-            borderBottom: `6px solid ${ACCENT}`,
+            flexDirection: "column",
+            background: BG,
+            color: FG,
+            fontFamily: "Inter",
+            padding: 60,
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
-          <img
-            src={meta.logoUrl.startsWith("http")
-              ? meta.logoUrl
-              : `${process.env.NEXT_PUBLIC_APP_URL ?? "https://qb-rankings.vercel.app"}${meta.logoUrl}`}
-            width={120}
-            height={120}
-            style={{ borderRadius: 999, objectFit: "cover", border: `3px solid ${FG}` }}
-          />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 24,
+              paddingBottom: 24,
+              borderBottom: `6px solid ${ACCENT}`,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+            <img
+              src={votingLogoSrc}
+              width={120}
+              height={120}
               style={{
-                fontFamily: "ArchivoBlack",
-                fontSize: 24,
-                color: ACCENT,
-                textTransform: "uppercase",
-                letterSpacing: 2,
+                borderRadius: 999,
+                objectFit: "cover",
+                border: `3px solid ${FG}`,
               }}
-            >
-              {meta.name} · 2026
-            </span>
-            <span
-              style={{
-                fontFamily: "Anton",
-                fontSize: 80,
-                lineHeight: 0.95,
-                textTransform: "uppercase",
-                color: FG,
-              }}
-            >
-              Ranking de
-            </span>
-            <span
-              style={{
-                fontFamily: "Anton",
-                fontSize: 64,
-                lineHeight: 1,
-                textTransform: "uppercase",
-                color: FG,
-              }}
-            >
-              {ranking.full_name}
-            </span>
+            />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span
+                style={{
+                  fontFamily: fontSubhead,
+                  fontSize: 24,
+                  color: ACCENT,
+                  textTransform: "uppercase",
+                  letterSpacing: 2,
+                }}
+              >
+                {meta.name} · 2026
+              </span>
+              <span
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 80,
+                  lineHeight: 0.95,
+                  textTransform: "uppercase",
+                  color: FG,
+                }}
+              >
+                Ranking de
+              </span>
+              <span
+                style={{
+                  fontFamily: fontDisplay,
+                  fontSize: 64,
+                  lineHeight: 1,
+                  textTransform: "uppercase",
+                  color: FG,
+                }}
+              >
+                {ranking.full_name}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Two columns */}
-        <div style={{ display: "flex", gap: 24, marginTop: 28, flex: 1 }}>
-          {[leftCol, rightCol].map((col, ci) => (
-            <div key={ci} style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}>
-              {col.map((r) => (
-                <div
-                  key={r.pos}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    background: SURFACE,
-                    border: `1px solid ${BORDER}`,
-                    borderRadius: 14,
-                    padding: "8px 14px",
-                    height: 72,
-                  }}
-                >
+          {/* Two columns */}
+          <div style={{ display: "flex", gap: 24, marginTop: 28, flex: 1 }}>
+            {[leftCol, rightCol].map((col, ci) => (
+              <div
+                key={ci}
+                style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}
+              >
+                {col.map((r) => (
                   <div
-                    style={{
-                      display: "flex",
-                      width: 56,
-                      justifyContent: "center",
-                      fontFamily: "JetBrainsMono",
-                      fontSize: 30,
-                      color: FG,
-                    }}
-                  >
-                    {r.pos.toString().padStart(2, "0")}
-                  </div>
-                  <div
+                    key={r.pos}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      width: 52,
-                      height: 52,
+                      gap: 14,
+                      background: SURFACE,
+                      border: `1px solid ${BORDER}`,
+                      borderRadius: 14,
+                      padding: "8px 14px",
+                      height: 72,
                     }}
                   >
-                    {r.logoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-                      <img
-                        src={r.logoUrl}
-                        width={52}
-                        height={52}
-                        style={{ objectFit: "contain" }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 52,
-                          height: 52,
-                          borderRadius: 999,
-                          background: r.teamColor,
-                          color: r.teamText,
-                          fontFamily: "Inter",
-                          fontSize: 18,
-                          fontWeight: 700,
-                          border: `2px solid ${r.teamText}`,
-                        }}
-                      >
-                        {r.teamAbbr}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-                    <span
+                    <div
                       style={{
-                        fontFamily: "Inter",
-                        fontWeight: 700,
-                        fontSize: 24,
+                        display: "flex",
+                        width: 56,
+                        justifyContent: "center",
+                        fontFamily: fontMono,
+                        fontSize: 30,
                         color: FG,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
                       }}
                     >
-                      {r.name}
-                    </span>
-                    <span
-                      style={{ fontFamily: "JetBrainsMono", fontSize: 16, color: MUTED }}
+                      {r.pos.toString().padStart(2, "0")}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 52,
+                        height: 52,
+                      }}
                     >
-                      {r.teamAbbr}
-                    </span>
+                      {r.logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+                        <img
+                          src={r.logoUrl}
+                          width={52}
+                          height={52}
+                          style={{ objectFit: "contain" }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 52,
+                            height: 52,
+                            borderRadius: 999,
+                            background: r.teamColor,
+                            color: r.teamText,
+                            fontFamily: "Inter",
+                            fontSize: 18,
+                            fontWeight: 700,
+                            border: `2px solid ${r.teamText}`,
+                          }}
+                        >
+                          {r.teamAbbr}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "Inter",
+                          fontWeight: 700,
+                          fontSize: 24,
+                          color: FG,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {r.name}
+                      </span>
+                      <span
+                        style={{ fontFamily: fontMono, fontSize: 16, color: MUTED }}
+                      >
+                        {r.teamAbbr}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+                ))}
+              </div>
+            ))}
+          </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 28,
-            paddingTop: 18,
-            borderTop: `1px solid ${BORDER}`,
-            color: MUTED,
-            fontFamily: "ArchivoBlack",
-            fontSize: 22,
-            textTransform: "uppercase",
-            letterSpacing: 2,
-          }}
-        >
-          <span>Haz tu propio top 32</span>
-          <span style={{ color: ACCENT }}>{meta.name}</span>
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 28,
+              paddingTop: 18,
+              borderTop: `1px solid ${BORDER}`,
+              color: MUTED,
+              fontFamily: fontSubhead,
+              fontSize: 22,
+              textTransform: "uppercase",
+              letterSpacing: 2,
+            }}
+          >
+            <span>Haz tu propio top 32</span>
+            <span style={{ color: ACCENT }}>{meta.name}</span>
+          </div>
         </div>
-
-        {/* Bottom strip with surface_2 (unused but keeps palette balanced) */}
-        <div style={{ display: "none", background: SURFACE_2 }} />
-      </div>
-    ),
-    {
-      width: WIDTH,
-      height: HEIGHT,
-      fonts,
-      headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
+      ),
+      {
+        width: WIDTH,
+        height: HEIGHT,
+        fonts: fonts.length > 0 ? fonts : undefined,
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
       },
-    },
-  );
+    );
+  } catch (err) {
+    console.error("Failed to render PNG", err);
+    return new Response("Failed to render PNG", { status: 500 });
+  }
 }
