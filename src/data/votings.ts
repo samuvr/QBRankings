@@ -8,6 +8,7 @@ export type Voting = {
   description: string;
   accent: string;
   accentDark: string;
+  logoUrl: string;
 };
 
 export const VOTINGS: Record<VotingId, Voting> = {
@@ -18,6 +19,7 @@ export const VOTINGS: Record<VotingId, Voting> = {
     description: "Comunidad NFL Alicante",
     accent: "#D81E2C",
     accentDark: "#8C0F1A",
+    logoUrl: "/nfl-alicante.jpg",
   },
   el_capologist: {
     id: "el_capologist",
@@ -26,6 +28,7 @@ export const VOTINGS: Record<VotingId, Voting> = {
     description: "El podcast más interactivo",
     accent: "#1F7AE0",
     accentDark: "#0F3F73",
+    logoUrl: "/capologist.jpg",
   },
 };
 
