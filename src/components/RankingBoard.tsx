@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAllQbs, getQbById, TOTAL_QBS, type Qb } from "@/data/qbs";
-import { getVoting, type VotingId } from "@/data/votings";
+import type { VotingPublic } from "@/lib/db/client";
 import { QbCard } from "./QbCard";
 import { RankingSlot } from "./RankingSlot";
 
@@ -15,15 +15,17 @@ type StoredProgress = {
   positions: (string | null)[];
 };
 
-const storageKey = (voting: VotingId) => `qbr:progress:${voting}`;
+const storageKey = (votingId: string) => `qbr:progress:${votingId}`;
 const userDataKey = "qbr:user";
 
-type Props = { voting: VotingId };
+type Props = { voting: VotingPublic };
 
 export function RankingBoard({ voting }: Props) {
   const router = useRouter();
   const allQbs = useMemo(() => getAllQbs(), []);
-  const votingMeta = getVoting(voting);
+  const votingMeta = voting;
+  const votingId = voting.id;
+  const votingSlug = voting.slug;
 
   const [positions, setPositions] = useState<(string | null)[]>(
     () => Array.from({ length: TOTAL_QBS }, () => null),
@@ -45,7 +47,7 @@ export function RankingBoard({ voting }: Props) {
         if (parsed.fullName) setFullName(parsed.fullName);
         if (parsed.email) setEmail(parsed.email);
       }
-      const stored = localStorage.getItem(storageKey(voting));
+      const stored = localStorage.getItem(storageKey(votingId));
       if (stored) {
         const parsed = JSON.parse(stored) as StoredProgress;
         if (Array.isArray(parsed.positions) && parsed.positions.length === TOTAL_QBS) {
@@ -58,18 +60,18 @@ export function RankingBoard({ voting }: Props) {
       // ignore corrupted storage
     }
     setHydrated(true);
-  }, [voting]);
+  }, [votingId]);
 
   // Persist progress
   useEffect(() => {
     if (!hydrated) return;
     try {
       const payload: StoredProgress = { fullName, email, positions };
-      localStorage.setItem(storageKey(voting), JSON.stringify(payload));
+      localStorage.setItem(storageKey(votingId), JSON.stringify(payload));
     } catch {
       // ignore quota errors
     }
-  }, [voting, positions, fullName, email, hydrated]);
+  }, [votingId, positions, fullName, email, hydrated]);
 
   const placedSet = useMemo(() => new Set(positions.filter((v): v is string => !!v)), [positions]);
   const pool = useMemo(() => allQbs.filter((q) => !placedSet.has(q.id)), [allQbs, placedSet]);
@@ -128,7 +130,7 @@ export function RankingBoard({ voting }: Props) {
         body: JSON.stringify({
           fullName: fullName.trim(),
           email: email.trim(),
-          voting,
+          voting: votingId,
           positions: positions as string[],
         }),
       });
@@ -138,18 +140,18 @@ export function RankingBoard({ voting }: Props) {
       }
       const data = (await res.json()) as { id: string };
       try {
-        localStorage.removeItem(storageKey(voting));
+        localStorage.removeItem(storageKey(votingId));
         sessionStorage.setItem(userDataKey, JSON.stringify({ fullName, email }));
       } catch {
         // ignore
       }
-      router.push(`/vote/${voting}/success?id=${data.id}`);
+      router.push(`/vote/${votingSlug}/success?id=${data.id}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error enviando ranking";
       setError(msg);
       setSubmitting(false);
     }
-  }, [complete, email, fullName, positions, router, voting]);
+  }, [complete, email, fullName, positions, router, votingId, votingSlug]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -165,7 +167,7 @@ export function RankingBoard({ voting }: Props) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={votingMeta.logoUrl}
+                src={votingMeta.logo_url}
                 alt={votingMeta.name}
                 className="h-full w-full object-cover"
               />

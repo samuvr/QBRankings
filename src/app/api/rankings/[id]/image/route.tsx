@@ -1,8 +1,7 @@
 import { ImageResponse } from "next/og";
-import { getRankingById } from "@/lib/db/client";
+import { getRankingById, getVotingById } from "@/lib/db/client";
 import { getQbById } from "@/data/qbs";
 import { getTeamByAbbr, teamLogoUrl } from "@/data/teams";
-import { getVoting } from "@/data/votings";
 
 export const runtime = "nodejs";
 
@@ -74,7 +73,6 @@ async function loadAllFonts(): Promise<FontEntry[]> {
 }
 
 function getOrigin(req: Request): string {
-  // Mejor opción: el origin del propio request
   try {
     const u = new URL(req.url);
     if (u.protocol && u.host) return `${u.protocol}//${u.host}`;
@@ -93,11 +91,15 @@ export async function GET(req: Request, { params }: { params: Params }) {
     return new Response("Not found", { status: 404 });
   }
 
-  const meta = getVoting(ranking.voting);
+  const meta = await getVotingById(ranking.voting);
+  if (!meta) {
+    return new Response("Voting not found", { status: 404 });
+  }
+
   const origin = getOrigin(req);
-  const votingLogoSrc = meta.logoUrl.startsWith("http")
-    ? meta.logoUrl
-    : `${origin}${meta.logoUrl}`;
+  const votingLogoSrc = meta.logo_url.startsWith("http")
+    ? meta.logo_url
+    : `${origin}${meta.logo_url}`;
 
   const rows = ranking.positions.map((qbId, idx) => {
     const qb = getQbById(qbId);
@@ -116,7 +118,6 @@ export async function GET(req: Request, { params }: { params: Params }) {
   const rightCol = rows.slice(16, 32);
 
   const fonts = await loadAllFonts();
-  // Si Anton no cargó, usamos system-ui como fallback.
   const fontDisplay = fonts.some((f) => f.name === "Anton") ? "Anton" : "Inter";
   const fontSubhead = fonts.some((f) => f.name === "ArchivoBlack")
     ? "ArchivoBlack"

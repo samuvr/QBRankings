@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Props = { nextPath?: string };
+type Props = { votingId: string; slug: string };
 
-export function LoginForm({ nextPath = "/admin" }: Props) {
+export function VotingAdminLoginForm({ votingId, slug }: Props) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,7 @@ export function LoginForm({ nextPath = "/admin" }: Props) {
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch(`/api/admin/votings/${votingId}/access`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ password }),
@@ -25,7 +25,7 @@ export function LoginForm({ nextPath = "/admin" }: Props) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? `Error ${res.status}`);
       }
-      router.push(nextPath);
+      router.push(`/admin/${slug}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -46,14 +46,12 @@ export function LoginForm({ nextPath = "/admin" }: Props) {
         required
       />
       {error && (
-        <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
-          {error}
-        </p>
+        <p className="rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-200">{error}</p>
       )}
       <button
         type="submit"
         disabled={busy}
-        className="font-subhead rounded-xl bg-accent px-4 py-3 text-base uppercase tracking-wide text-white transition active:scale-[0.98] hover:bg-accent-dark disabled:opacity-50"
+        className="rounded-xl bg-foreground px-4 py-3 text-base font-bold text-background transition disabled:opacity-50"
       >
         {busy ? "Entrando…" : "Entrar"}
       </button>

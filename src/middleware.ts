@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { ADMIN_COOKIE_NAME } from "@/lib/auth";
-import { VOTING_IDS } from "@/data/votings";
 
 export const config = {
   matcher: ["/", "/admin/:path*", "/api/admin/:path*"],
@@ -28,28 +27,43 @@ export async function middleware(request: NextRequest) {
   // para que la contraseña se pida de nuevo cada vez que arranca el flujo.
   if (pathname === "/") {
     const response = NextResponse.next();
-    for (const v of VOTING_IDS) {
-      response.cookies.delete(`voting_access_${v}`);
+    for (const cookie of request.cookies.getAll()) {
+      if (
+        cookie.name.startsWith("voter_access_") ||
+        cookie.name.startsWith("voting_admin_")
+      ) {
+        response.cookies.delete(cookie.name);
+      }
     }
     return response;
   }
 
   const isLoginPage = pathname === "/admin";
   const isLoginApi = pathname === "/api/admin/login";
-
-  if (isLoginPage || isLoginApi) {
+  const isVotingAdminAccess = /^\/admin\/[^/]+\/access$/.test(pathname);
+  const isVotingAdminAccessApi = /^\/api\/admin\/votings\/[^/]+\/access$/.test(pathname);
+  if (isLoginPage || isLoginApi || isVotingAdminAccess || isVotingAdminAccessApi) {
     return NextResponse.next();
   }
 
   const authed = await isAuthenticated(request);
-  if (authed) return NextResponse.next();
 
-  if (pathname.startsWith("/api/admin")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const isVotingsMgmtPage = pathname.startsWith("/admin/votings");
+  const isVotingsMgmtApi =
+    pathname.startsWith("/api/admin/votings") && !isVotingAdminAccessApi;
+
+  if (isVotingsMgmtPage || isVotingsMgmtApi) {
+    if (authed) return NextResponse.next();
+    if (isVotingsMgmtApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
   }
 
-  const url = request.nextUrl.clone();
-  url.pathname = "/admin";
-  url.searchParams.set("next", pathname);
-  return NextResponse.redirect(url);
+  // Para /admin/[slug] y APIs admin no-mgmt: el server component / handler
+  // delega la auth granular (superadmin O voting_admin de ese id).
+  return NextResponse.next();
 }

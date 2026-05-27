@@ -29,6 +29,59 @@ export type GlobalRankingResult = {
   rounds: RoundBreakdown[];
 };
 
+type QbStats = {
+  positionCounts: Map<number, number>;
+  sortedUniqueDesc: number[];
+  sum: number;
+};
+
+function buildQbStats(allRankings: string[][]): Map<string, QbStats> {
+  const stats = new Map<string, QbStats>();
+  for (const ranking of allRankings) {
+    ranking.forEach((qbId, idx) => {
+      const pos = idx + 1;
+      let s = stats.get(qbId);
+      if (!s) {
+        s = { positionCounts: new Map(), sortedUniqueDesc: [], sum: 0 };
+        stats.set(qbId, s);
+      }
+      s.positionCounts.set(pos, (s.positionCounts.get(pos) ?? 0) + 1);
+      s.sum += pos;
+    });
+  }
+  for (const s of stats.values()) {
+    s.sortedUniqueDesc = [...s.positionCounts.keys()].sort((a, b) => b - a);
+  }
+  return stats;
+}
+
+// Devuelve negativo si `aId` debe ir antes en `sortedScores` (peor → recibe
+// peor posición final). Cadena de 5 criterios: peor única, veces que la recibe,
+// segunda peor única, veces que la recibe y, en último lugar, suma total.
+function compareTie(aId: string, bId: string, stats: Map<string, QbStats>): number {
+  const a = stats.get(aId);
+  const b = stats.get(bId);
+  if (!a || !b) return 0;
+
+  const aWorst = a.sortedUniqueDesc[0] ?? 0;
+  const bWorst = b.sortedUniqueDesc[0] ?? 0;
+  if (aWorst !== bWorst) return bWorst - aWorst;
+
+  const aWorstCount = a.positionCounts.get(aWorst) ?? 0;
+  const bWorstCount = b.positionCounts.get(bWorst) ?? 0;
+  if (aWorstCount !== bWorstCount) return bWorstCount - aWorstCount;
+
+  const aSecond = a.sortedUniqueDesc[1] ?? 0;
+  const bSecond = b.sortedUniqueDesc[1] ?? 0;
+  if (aSecond !== bSecond) return bSecond - aSecond;
+
+  const aSecondCount = a.positionCounts.get(aSecond) ?? 0;
+  const bSecondCount = b.positionCounts.get(bSecond) ?? 0;
+  if (aSecondCount !== bSecondCount) return bSecondCount - aSecondCount;
+
+  return b.sum - a.sum;
+}
+
 /**
  * Computes the global ranking using the iterative bottom-up algorithm.
  * `allRankings` is an array of user rankings, each being an ordered array
@@ -38,6 +91,7 @@ export function computeGlobalRanking(allRankings: string[][]): GlobalRankingResu
   const orderedWorstFirst: GlobalRankingEntry[] = [];
   const orderedSet = new Set<string>();
   const breakdowns: RoundBreakdown[] = [];
+  const qbStats = buildQbStats(allRankings);
 
   for (let roundIdx = 0; roundIdx < ROUNDS.length; roundIdx++) {
     const round = ROUNDS[roundIdx];
@@ -53,9 +107,10 @@ export function computeGlobalRanking(allRankings: string[][]): GlobalRankingResu
       }
     }
 
-    const sortedScores = [...scores.entries()].sort(
-      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-    );
+    const sortedScores = [...scores.entries()].sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return compareTie(a[0], b[0], qbStats);
+    });
 
     const startPos = 32 - orderedWorstFirst.length;
     const taken = sortedScores.slice(0, round.count);

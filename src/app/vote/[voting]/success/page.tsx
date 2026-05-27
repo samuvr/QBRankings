@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getRankingById } from "@/lib/db/client";
-import { getVoting, isVotingId } from "@/data/votings";
+import { getRankingById, getVotingBySlug } from "@/lib/db/client";
 import { ShareActions } from "./ShareActions";
 
 type Params = Promise<{ voting: string }>;
@@ -14,13 +13,14 @@ export default async function SuccessPage({
   params: Params;
   searchParams: Search;
 }) {
-  const { voting } = await params;
+  const { voting: slug } = await params;
   const { id } = await searchParams;
-  if (!isVotingId(voting) || !id) notFound();
+  if (!id) notFound();
+  const voting = await getVotingBySlug(slug);
+  if (!voting) notFound();
   const ranking = await getRankingById(id);
-  if (!ranking || ranking.voting !== voting) notFound();
+  if (!ranking || ranking.voting !== voting.id) notFound();
 
-  const meta = getVoting(voting);
   // Cache-bust por updated_at: cada reenvío del mismo id genera una URL nueva
   const version = new Date(ranking.updated_at).getTime();
   const imageUrl = `/api/rankings/${id}/image?v=${version}`;
@@ -30,7 +30,7 @@ export default async function SuccessPage({
       <header className="mb-6 text-center">
         <p
           className="font-subhead text-xs uppercase tracking-[0.25em]"
-          style={{ color: meta.accent }}
+          style={{ color: voting.accent }}
         >
           Ranking enviado
         </p>
@@ -38,7 +38,7 @@ export default async function SuccessPage({
           ¡Listo, {ranking.full_name.split(" ")[0]}!
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Tu top 32 está guardado en {meta.name}. Descarga la imagen y compártela.
+          Tu top 32 está guardado en {voting.name}. Descarga la imagen y compártela.
         </p>
       </header>
 
@@ -52,7 +52,7 @@ export default async function SuccessPage({
         />
       </div>
 
-      <ShareActions imageUrl={imageUrl} fullName={ranking.full_name} votingName={meta.name} />
+      <ShareActions imageUrl={imageUrl} fullName={ranking.full_name} votingName={voting.name} />
 
       <Link
         href="/"

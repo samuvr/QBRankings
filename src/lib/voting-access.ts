@@ -1,49 +1,97 @@
+import bcrypt from "bcryptjs";
+import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { type VotingId } from "@/data/votings";
 
-const COOKIE_PREFIX = "voting_access_";
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24; // 24h
+const SALT_ROUNDS = 10;
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12; // 12h
 
-function envKey(votingId: VotingId): string {
-  return `VOTING_PASSWORD_${votingId.toUpperCase()}`;
-}
+export type VotingRole = "voter" | "voting_admin";
 
-export function getVotingPassword(votingId: VotingId): string | undefined {
-  const raw = process.env[envKey(votingId)];
-  if (!raw || raw.trim().length === 0) return undefined;
-  return raw;
-}
-
-export function votingRequiresPassword(votingId: VotingId): boolean {
-  return !!getVotingPassword(votingId);
-}
-
-export function checkVotingPassword(votingId: VotingId, input: string): boolean {
-  const expected = getVotingPassword(votingId);
-  if (!expected) return true; // sin password configurada = libre
-  if (typeof input !== "string" || input.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < expected.length; i++) {
-    mismatch |= expected.charCodeAt(i) ^ input.charCodeAt(i);
+function getSecretKey(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 16) {
+    throw new Error("SESSION_SECRET must be set (>=16 chars)");
   }
-  return mismatch === 0;
+  return new TextEncoder().encode(secret);
 }
 
-export async function hasVotingAccess(votingId: VotingId): Promise<boolean> {
-  if (!votingRequiresPassword(votingId)) return true;
-  const store = await cookies();
-  return !!store.get(`${COOKIE_PREFIX}${votingId}`)?.value;
+export async function hashPassword(plain: string): Promise<string> {
+  return bcrypt.hash(plain, SALT_ROUNDS);
 }
 
-export async function grantVotingAccess(votingId: VotingId): Promise<void> {
+export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
+  if (!plain || !hash) return false;
+  return bcrypt.compare(plain, hash);
+}
+
+export function voterCookieName(votingId: string): string {
+  return `voter_access_${votingId}`;
+}
+
+export function votingAdminCookieName(votingId: string): string {
+  return `voting_admin_${votingId}`;
+}
+
+async function signToken(votingId: string, role: VotingRole): Promise<string> {
+  return new SignJWT({ votingId, role })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${COOKIE_MAX_AGE_SECONDS}s`)
+    .sign(getSecretKey());
+}
+
+async function verifyToken(
+  token: string | undefined,
+  votingId: string,
+  role: VotingRole,
+): Promise<boolean> {
+  if (!token) return false;
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    return payload.role === role && payload.votingId === votingId;
+  } catch {
+    return false;
+  }
+}
+
+export async function setVoterCookie(votingId: string): Promise<void> {
+  const token = await signToken(votingId, "voter");
   const store = await cookies();
   store.set({
-    name: `${COOKIE_PREFIX}${votingId}`,
-    value: "1",
+    name: voterCookieName(votingId),
+    value: token,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: COOKIE_MAX_AGE_SECONDS,
   });
+}
+
+export async function setVotingAdminCookie(votingId: string): Promise<void> {
+  const token = await signToken(votingId, "voting_admin");
+  const store = await cookies();
+  store.set({
+    name: votingAdminCookieName(votingId),
+    value: token,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: COOKIE_MAX_AGE_SECONDS,
+  });
+}
+
+export async function hasVoterAccess(votingId: string): Promise<boolean> {
+  const store = await cookies();
+  return verifyToken(store.get(voterCookieName(votingId))?.value, votingId, "voter");
+}
+
+export async function hasVotingAdminAccess(votingId: string): Promise<boolean> {
+  const store = await cookies();
+  return verifyToken(
+    store.get(votingAdminCookieName(votingId))?.value,
+    votingId,
+    "voting_admin",
+  );
 }
