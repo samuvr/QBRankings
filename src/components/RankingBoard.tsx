@@ -210,6 +210,7 @@ export function RankingBoard({ voting }: Props) {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              maxLength={30}
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-foreground"
               placeholder="Tu nombre"
               autoComplete="name"

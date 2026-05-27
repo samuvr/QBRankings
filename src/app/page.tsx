@@ -78,13 +78,19 @@ export default function Home() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <label className="block">
-          <span className="font-subhead mb-1 block text-[11px] uppercase tracking-wide text-muted">
-            Nombre completo
+          <span className="font-subhead mb-1 flex items-baseline justify-between text-[11px] uppercase tracking-wide text-muted">
+            <span>Nombre completo</span>
+            {fullName.length > 0 && (
+              <span className="font-mono text-[10px] tabular-nums">
+                {fullName.length}/30
+              </span>
+            )}
           </span>
           <input
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
+            maxLength={30}
             className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none transition focus:border-foreground"
             placeholder="Tu nombre"
             autoComplete="name"

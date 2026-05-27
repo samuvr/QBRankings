@@ -125,6 +125,10 @@ export async function GET(req: Request, { params }: { params: Params }) {
     ? "JetBrainsMono"
     : "Inter";
 
+  // Auto-shrink del nombre en una sola línea según longitud.
+  const nameLen = ranking.full_name.length;
+  const nameFontSize = nameLen <= 20 ? 80 : nameLen <= 26 ? 64 : 52;
+
   try {
     return new ImageResponse(
       (
@@ -187,7 +191,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
               <span
                 style={{
                   fontFamily: fontDisplay,
-                  fontSize: 64,
+                  fontSize: nameFontSize,
                   lineHeight: 1,
                   textTransform: "uppercase",
                   color: FG,

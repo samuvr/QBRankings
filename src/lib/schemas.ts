@@ -5,7 +5,7 @@ import { VOTING_IDS } from "@/data/votings";
 const QB_ID_SET = new Set(getQbIds());
 
 export const RankingSubmissionSchema = z.object({
-  fullName: z.string().trim().min(2).max(120),
+  fullName: z.string().trim().min(2).max(30),
   email: z.string().trim().toLowerCase().email().max(200),
   voting: z.enum(VOTING_IDS),
   positions: z
