@@ -4,8 +4,17 @@ import { VOTING_IDS } from "@/data/votings";
 
 const QB_ID_SET = new Set(getQbIds());
 
+// Normaliza a Title Case: minúsculas + capitaliza tras espacio, guión o apóstrofo.
+// Maneja acentos (à-ÿ): "ANTONIO ANTON TOME" → "Antonio Anton Tome",
+// "o'brien" → "O'Brien", "jean-pierre" → "Jean-Pierre", "garcía" → "García".
+function toTitleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/(^|[\s\-'])([a-zà-ÿ])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+}
+
 export const RankingSubmissionSchema = z.object({
-  fullName: z.string().trim().min(2).max(120),
+  fullName: z.string().trim().min(2).max(30).transform(toTitleCase),
   email: z.string().trim().toLowerCase().email().max(200),
   voting: z.enum(VOTING_IDS),
   positions: z
