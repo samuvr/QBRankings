@@ -26,8 +26,8 @@ export const VOTINGS: Record<VotingId, Voting> = {
     name: "El Capologist",
     shortName: "CAPO",
     description: "El podcast más interactivo",
-    accent: "#1F7AE0",
-    accentDark: "#0F3F73",
+    accent: "#05693E",
+    accentDark: "#13452E",
     logoUrl: "/capologist.jpg",
   },
 };
