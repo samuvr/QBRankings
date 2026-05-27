@@ -1,6 +1,3 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
-
 import { randomBytes } from "node:crypto";
 import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
