@@ -4,6 +4,8 @@ import { getVotingBySlug } from "@/lib/db/client";
 import { hasVoterAccess } from "@/lib/voting-access";
 import { isAdminAuthenticated } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 type Params = Promise<{ voting: string }>;
 
 export default async function VotePage({ params }: { params: Params }) {

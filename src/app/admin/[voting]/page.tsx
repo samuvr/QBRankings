@@ -49,12 +49,12 @@ export default async function AdminDashboardPage({
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p
-            className="text-xs font-bold uppercase tracking-[0.2em]"
+            className="font-subhead text-xs uppercase tracking-[0.25em]"
             style={{ color: voting.accent }}
           >
             Ranking global
           </p>
-          <h1 className="text-3xl font-black">{voting.name}</h1>
+          <h1 className="font-display text-4xl uppercase leading-tight">{voting.name}</h1>
           <p className="mt-1 text-sm text-muted">
             {result.totalSubmissions} envíos · {qbCount} QBs en 7 rondas
           </p>
@@ -62,7 +62,7 @@ export default async function AdminDashboardPage({
         {isSuper && (
           <Link
             href="/admin"
-            className="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold transition hover:border-muted"
+            className="font-subhead rounded-xl border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wide transition hover:border-foreground"
           >
             ← Volver al panel
           </Link>

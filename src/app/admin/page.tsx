@@ -34,15 +34,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
     <main className="mx-auto w-full max-w-4xl px-5 py-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted">Panel</p>
-          <h1 className="text-3xl font-black">Votaciones</h1>
+          <p className="font-subhead text-xs uppercase tracking-[0.25em] text-muted">Panel</p>
+          <h1 className="font-display text-5xl uppercase">Votaciones</h1>
           <p className="mt-1 text-sm text-muted">
             Gestiona votaciones, contraseñas y consulta los rankings globales.
           </p>
         </div>
         <Link
           href="/admin/votings/new"
-          className="rounded-xl bg-foreground px-4 py-2 text-sm font-bold text-background transition hover:opacity-90"
+          className="font-subhead rounded-xl bg-accent px-4 py-2 text-sm uppercase tracking-wide text-white transition hover:bg-accent-dark"
         >
           + Nueva votación
         </Link>

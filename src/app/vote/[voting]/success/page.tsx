@@ -21,6 +21,7 @@ export default async function SuccessPage({
   const ranking = await getRankingById(id);
   if (!ranking || ranking.voting !== voting.id) notFound();
 
+  // Cache-bust por updated_at: cada reenvío del mismo id genera una URL nueva
   const version = new Date(ranking.updated_at).getTime();
   const imageUrl = `/api/rankings/${id}/image?v=${version}`;
 

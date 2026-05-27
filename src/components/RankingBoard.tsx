@@ -156,25 +156,34 @@ export function RankingBoard({ voting }: Props) {
   return (
     <div className="flex min-h-screen flex-col">
       <header
-        className="sticky top-0 z-10 border-b border-border bg-background/90 px-4 py-3 backdrop-blur"
+        className="sticky top-0 z-10 border-b-2 bg-background/95 px-4 py-3 backdrop-blur"
         style={{ borderColor: votingMeta.accent }}
       >
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div
-              className="flex h-9 w-9 items-center justify-center rounded-full font-bold text-white"
-              style={{ background: votingMeta.accent }}
+              className="relative h-10 w-10 overflow-hidden rounded-full border-2"
+              style={{ borderColor: votingMeta.accent }}
             >
-              {votingMeta.short_name}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={votingMeta.logo_url}
+                alt={votingMeta.name}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted">Votación</p>
-              <p className="text-sm font-semibold leading-tight">{votingMeta.name}</p>
+              <p className="font-subhead text-[10px] uppercase tracking-wide text-muted">
+                Votación
+              </p>
+              <p className="font-subhead text-sm leading-tight">{votingMeta.name}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-muted">Progreso</p>
-            <p className="font-mono text-sm font-bold">
+            <p className="font-subhead text-[10px] uppercase tracking-wide text-muted">
+              Progreso
+            </p>
+            <p className="font-mono text-base font-bold">
               {placedCount.toString().padStart(2, "0")} / {TOTAL_QBS}
             </p>
           </div>
@@ -196,18 +205,23 @@ export function RankingBoard({ voting }: Props) {
         {/* User identity */}
         <div className="mb-4 grid grid-cols-1 gap-2 rounded-xl border border-border bg-surface p-3 sm:grid-cols-2">
           <label className="text-xs">
-            <span className="mb-1 block text-muted">Nombre completo</span>
+            <span className="font-subhead mb-1 block text-[10px] uppercase tracking-wide text-muted">
+              Nombre completo
+            </span>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              maxLength={30}
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none focus:border-foreground"
               placeholder="Tu nombre"
               autoComplete="name"
             />
           </label>
           <label className="text-xs">
-            <span className="mb-1 block text-muted">Email</span>
+            <span className="font-subhead mb-1 block text-[10px] uppercase tracking-wide text-muted">
+              Email
+            </span>
             <input
               type="email"
               value={email}
@@ -225,7 +239,7 @@ export function RankingBoard({ voting }: Props) {
           <button
             type="button"
             onClick={() => setTab("pool")}
-            className={`px-3 py-2 text-sm font-semibold transition ${
+            className={`font-subhead px-3 py-2 text-xs uppercase tracking-wide transition ${
               tab === "pool" ? "bg-surface-2 text-foreground" : "text-muted"
             }`}
           >
@@ -234,7 +248,7 @@ export function RankingBoard({ voting }: Props) {
           <button
             type="button"
             onClick={() => setTab("ranking")}
-            className={`px-3 py-2 text-sm font-semibold transition ${
+            className={`font-subhead px-3 py-2 text-xs uppercase tracking-wide transition ${
               tab === "ranking" ? "bg-surface-2 text-foreground" : "text-muted"
             }`}
           >
@@ -248,7 +262,7 @@ export function RankingBoard({ voting }: Props) {
             className={`${tab === "pool" ? "block" : "hidden"} lg:block`}
             aria-label="QBs disponibles"
           >
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            <h2 className="font-subhead mb-2 text-[11px] uppercase tracking-wide text-muted">
               Toca un QB para añadirlo al siguiente puesto vacío
             </h2>
             <ul className="space-y-2">
@@ -270,7 +284,7 @@ export function RankingBoard({ voting }: Props) {
             className={`${tab === "ranking" ? "block" : "hidden"} lg:block`}
             aria-label="Mi ranking"
           >
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            <h2 className="font-subhead mb-2 text-[11px] uppercase tracking-wide text-muted">
               Tu ranking (1 = mejor, 32 = peor)
             </h2>
             <ol className="space-y-2">
@@ -299,13 +313,15 @@ export function RankingBoard({ voting }: Props) {
       <footer className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-4 py-3 safe-bottom backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-col gap-2">
           {error && (
-            <p className="rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-200">{error}</p>
+            <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+              {error}
+            </p>
           )}
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!complete || submitting}
-            className="w-full rounded-xl px-4 py-3 text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
+            className="font-subhead w-full rounded-xl px-4 py-3 text-base uppercase tracking-wide text-white transition active:scale-[0.98] disabled:opacity-40"
             style={{ background: votingMeta.accent }}
           >
             {submitting ? "Enviando…" : complete ? "Enviar ranking" : `Coloca a los ${TOTAL_QBS - placedCount} restantes`}

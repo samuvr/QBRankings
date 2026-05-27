@@ -16,7 +16,7 @@ export function QbCard({ qb, onTap, disabled, compact }: Props) {
       <TeamMark abbr={qb.teamAbbr} size={compact ? 36 : 44} />
       <div className="min-w-0 flex-1 text-left">
         <p className={`truncate font-semibold ${compact ? "text-sm" : "text-base"}`}>{qb.name}</p>
-        <p className="truncate text-xs text-muted">{qb.teamAbbr}</p>
+        <p className="truncate font-mono text-xs text-muted">{qb.teamAbbr}</p>
       </div>
     </>
   );

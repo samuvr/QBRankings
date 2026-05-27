@@ -58,7 +58,7 @@ export function ShareActions({ imageUrl, fullName, votingName }: Props) {
         type="button"
         onClick={handleShare}
         disabled={busy}
-        className="w-full rounded-xl bg-foreground px-4 py-3 text-base font-bold text-background transition active:scale-[0.98] disabled:opacity-50"
+        className="font-subhead w-full rounded-xl bg-accent px-4 py-3 text-base uppercase tracking-wide text-white transition active:scale-[0.98] hover:bg-accent-dark disabled:opacity-50"
       >
         Compartir ranking
       </button>
@@ -66,7 +66,7 @@ export function ShareActions({ imageUrl, fullName, votingName }: Props) {
         type="button"
         onClick={handleDownload}
         disabled={busy}
-        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base font-semibold transition active:scale-[0.98] hover:border-muted disabled:opacity-50"
+        className="font-subhead w-full rounded-xl border border-border bg-surface px-4 py-3 text-base uppercase tracking-wide transition active:scale-[0.98] hover:border-foreground disabled:opacity-50"
       >
         Descargar PNG
       </button>

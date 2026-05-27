@@ -23,6 +23,8 @@ async function isAuthenticated(request: NextRequest): Promise<boolean> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Al entrar a la home, limpiamos cualquier acceso previo a una votación
+  // para que la contraseña se pida de nuevo cada vez que arranca el flujo.
   if (pathname === "/") {
     const response = NextResponse.next();
     for (const cookie of request.cookies.getAll()) {

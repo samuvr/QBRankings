@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { VotingPublic } from "@/lib/db/client";
 
 type Props = {
@@ -40,10 +41,16 @@ export function VotingSelector({ value, onChange, votings }: Props) {
               className="sr-only"
             />
             <div
-              className="flex h-16 w-16 items-center justify-center rounded-full font-bold text-white"
-              style={{ background: v.accent }}
+              className="relative h-20 w-20 overflow-hidden rounded-full border-2"
+              style={{ borderColor: v.accent, background: v.accent }}
             >
-              {v.short_name}
+              <Image
+                src={v.logo_url}
+                alt={`Logo ${v.name}`}
+                fill
+                sizes="80px"
+                className="object-cover"
+              />
             </div>
             <div>
               <p className="text-base font-semibold">{v.name}</p>
