@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx src/lib/db/migrate.ts"
+    "db:migrate": "tsx --env-file=.env.local src/lib/db/migrate.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
