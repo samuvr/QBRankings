@@ -1,6 +1,9 @@
+import { config } from "dotenv";
 import { randomBytes } from "node:crypto";
 import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
+
+config({ path: ".env.local" });
 
 const NFL_ALICANTE_ID = "11111111-1111-1111-1111-111111111111";
 const EL_CAPOLOGIST_ID = "22222222-2222-2222-2222-222222222222";
