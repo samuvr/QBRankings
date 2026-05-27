@@ -26,10 +26,15 @@ export default async function SuccessPage({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center px-5 py-10">
       <header className="mb-6 text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: meta.accent }}>
+        <p
+          className="font-subhead text-xs uppercase tracking-[0.25em]"
+          style={{ color: meta.accent }}
+        >
           Ranking enviado
         </p>
-        <h1 className="mt-2 text-3xl font-black">¡Listo, {ranking.full_name.split(" ")[0]}!</h1>
+        <h1 className="font-display mt-2 text-4xl uppercase leading-tight">
+          ¡Listo, {ranking.full_name.split(" ")[0]}!
+        </h1>
         <p className="mt-2 text-sm text-muted">
           Tu top 32 está guardado en {meta.name}. Descarga la imagen y compártela.
         </p>

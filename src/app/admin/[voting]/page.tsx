@@ -26,17 +26,20 @@ export default async function AdminDashboardPage({ params }: { params: Params })
     <main className="mx-auto w-full max-w-3xl px-5 py-8">
       <header className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: meta.accent }}>
+          <p
+            className="font-subhead text-xs uppercase tracking-[0.25em]"
+            style={{ color: meta.accent }}
+          >
             Ranking global
           </p>
-          <h1 className="text-3xl font-black">{meta.name}</h1>
+          <h1 className="font-display text-4xl uppercase leading-tight">{meta.name}</h1>
           <p className="mt-1 text-sm text-muted">
             {result.totalSubmissions} envíos · {qbCount} QBs ordenados en 7 rondas
           </p>
         </div>
         <Link
           href={`/admin/${otherVoting.id}`}
-          className="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold transition hover:border-muted"
+          className="font-subhead rounded-xl border border-border bg-surface px-3 py-2 text-xs uppercase tracking-wide transition hover:border-foreground"
         >
           Ver {otherVoting.shortName} →
         </Link>
@@ -58,13 +61,13 @@ export default async function AdminDashboardPage({ params }: { params: Params })
                     key={entry.qbId}
                     className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2"
                   >
-                    <div className="w-10 text-right font-mono text-lg font-bold text-muted">
+                    <div className="w-10 text-right font-mono text-xl font-bold text-foreground">
                       {entry.finalPosition.toString().padStart(2, "0")}
                     </div>
                     {team && <TeamMark abbr={qb!.teamAbbr} size={36} />}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{qb?.name ?? entry.qbId}</p>
-                      <p className="truncate text-xs text-muted">
+                      <p className="truncate font-mono text-xs text-muted">
                         {qb?.teamAbbr} · ronda {entry.roundIndex + 1} · {entry.pointsInRound} pts
                       </p>
                     </div>
@@ -75,7 +78,7 @@ export default async function AdminDashboardPage({ params }: { params: Params })
           </section>
 
           <section className="mt-10" aria-label="Votantes">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+            <h2 className="font-subhead mb-3 text-sm uppercase tracking-wide text-muted">
               Votantes ({rows.length})
             </h2>
             <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { VotingSelector } from "@/components/VotingSelector";
 import { type VotingId } from "@/data/votings";
@@ -55,8 +56,21 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-10">
       <header className="mb-8 text-center">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-muted">Temporada 2026</p>
-        <h1 className="text-4xl font-black tracking-tight">QB Rankings</h1>
+        <div className="mb-5 flex justify-center">
+          <Image
+            src="/nfl-alicante.jpg"
+            alt="NFL Alicante"
+            width={96}
+            height={96}
+            className="rounded-full border-2"
+            style={{ borderColor: "var(--foreground)" }}
+            priority
+          />
+        </div>
+        <p className="font-subhead text-xs uppercase tracking-[0.25em] text-muted">
+          Temporada 2026
+        </p>
+        <h1 className="mt-2 font-display text-6xl uppercase leading-[0.95]">QB Rankings</h1>
         <p className="mt-3 text-sm text-muted">
           Ordena tu top 32 de QBs titulares y participa en la votación.
         </p>
@@ -64,14 +78,14 @@ export default function Home() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
+          <span className="font-subhead mb-1 block text-[11px] uppercase tracking-wide text-muted">
             Nombre completo
           </span>
           <input
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-foreground"
+            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none transition focus:border-foreground"
             placeholder="Tu nombre"
             autoComplete="name"
             required
@@ -79,14 +93,14 @@ export default function Home() {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
+          <span className="font-subhead mb-1 block text-[11px] uppercase tracking-wide text-muted">
             Email
           </span>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-foreground"
+            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none transition focus:border-foreground"
             placeholder="tu@email.com"
             autoComplete="email"
             inputMode="email"
@@ -95,19 +109,21 @@ export default function Home() {
         </label>
 
         <div>
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted">
+          <span className="font-subhead mb-2 block text-[11px] uppercase tracking-wide text-muted">
             Votación
           </span>
           <VotingSelector value={voting} onChange={setVoting} />
         </div>
 
         {error && (
-          <p className="rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-200">{error}</p>
+          <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+            {error}
+          </p>
         )}
 
         <button
           type="submit"
-          className="mt-2 rounded-xl bg-foreground px-4 py-3 text-base font-bold text-background transition active:scale-[0.98] hover:opacity-90"
+          className="font-subhead mt-2 rounded-xl bg-accent px-4 py-3 text-base uppercase tracking-wide text-white transition active:scale-[0.98] hover:bg-accent-dark"
         >
           Empezar ranking
         </button>

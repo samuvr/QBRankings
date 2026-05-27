@@ -45,11 +45,15 @@ export function LoginForm({ nextPath }: Props) {
         autoComplete="current-password"
         required
       />
-      {error && <p className="rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-200">{error}</p>}
+      {error && (
+        <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl bg-foreground px-4 py-3 text-base font-bold text-background transition active:scale-[0.98] disabled:opacity-50"
+        className="font-subhead rounded-xl bg-accent px-4 py-3 text-base uppercase tracking-wide text-white transition active:scale-[0.98] hover:bg-accent-dark disabled:opacity-50"
       >
         {busy ? "Entrando…" : "Entrar"}
       </button>

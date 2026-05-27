@@ -1,13 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0f;
-  --foreground: #f5f5f7;
-  --surface: #14141c;
-  --surface-2: #1c1c28;
-  --border: #2a2a38;
-  --muted: #8a8a99;
-  --accent: #d81e2c;
+  /* Paleta NFL Alicante */
+  --background: #F4EEDC;          /* crema */
+  --foreground: #0A2240;          /* navy (texto primario) */
+  --accent: #C8102E;              /* rojo CTA/alarma */
+  --accent-dark: #9A0C24;
+
+  /* Superficies derivadas (sobre la crema) */
+  --surface: #FBF7E8;             /* card un poco más clara que el fondo */
+  --surface-2: #ECE3C7;           /* card secundaria / hover / progreso vacío */
+  --border: rgba(10, 34, 64, 0.18);
+  --muted: rgba(10, 34, 64, 0.6);
 }
 
 @theme inline {
@@ -18,8 +22,12 @@
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent-dark: var(--accent-dark);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-subhead: var(--font-subhead);
+  --font-mono: var(--font-mono);
 }
 
 html,
@@ -37,6 +45,17 @@ button {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+/* Tipografías por rol */
+.font-display {
+  font-family: var(--font-display), Impact, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.font-subhead {
+  font-family: var(--font-subhead), system-ui, sans-serif;
+  letter-spacing: 0.02em;
 }
 
 /* iOS safe area helpers */
