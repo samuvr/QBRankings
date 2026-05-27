@@ -1,8 +1,7 @@
 import { ImageResponse } from "next/og";
-import { getRankingById } from "@/lib/db/client";
+import { getRankingById, getVotingById } from "@/lib/db/client";
 import { getQbById } from "@/data/qbs";
 import { getTeamByAbbr } from "@/data/teams";
-import { getVoting } from "@/data/votings";
 
 export const runtime = "nodejs";
 
@@ -18,7 +17,10 @@ export async function GET(_req: Request, { params }: { params: Params }) {
     return new Response("Not found", { status: 404 });
   }
 
-  const meta = getVoting(ranking.voting);
+  const meta = await getVotingById(ranking.voting);
+  if (!meta) {
+    return new Response("Voting not found", { status: 404 });
+  }
   const rows = ranking.positions.map((qbId, idx) => {
     const qb = getQbById(qbId);
     const team = qb ? getTeamByAbbr(qb.teamAbbr) : null;
@@ -72,7 +74,7 @@ export async function GET(_req: Request, { params }: { params: Params }) {
               fontSize: 36,
             }}
           >
-            {meta.shortName}
+            {meta.short_name}
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: 28, color: "#8a8a99", fontWeight: 600 }}>

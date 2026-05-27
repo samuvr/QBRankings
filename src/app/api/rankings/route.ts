@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { RankingSubmissionSchema } from "@/lib/schemas";
-import { upsertRanking } from "@/lib/db/client";
+import { getVotingById, upsertRanking } from "@/lib/db/client";
+import { hasVoterAccess } from "@/lib/voting-access";
+import { isAdminAuthenticated } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -24,6 +26,17 @@ export async function POST(req: Request) {
       );
     }
     throw err;
+  }
+
+  const voting = await getVotingById(data.voting);
+  if (!voting || !voting.active) {
+    return NextResponse.json({ error: "Votación no encontrada" }, { status: 404 });
+  }
+
+  const isSuper = await isAdminAuthenticated();
+  const isVoter = await hasVoterAccess(voting.id);
+  if (!isSuper && !isVoter) {
+    return NextResponse.json({ error: "Sin acceso a esta votación" }, { status: 401 });
   }
 
   try {

@@ -1,17 +1,25 @@
 "use client";
 
-import { VOTINGS, type VotingId } from "@/data/votings";
+import type { VotingPublic } from "@/lib/db/client";
 
 type Props = {
-  value: VotingId | null;
-  onChange: (id: VotingId) => void;
+  value: string | null;
+  onChange: (id: string) => void;
+  votings: VotingPublic[];
 };
 
-export function VotingSelector({ value, onChange }: Props) {
+export function VotingSelector({ value, onChange, votings }: Props) {
+  if (votings.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-border bg-surface p-4 text-center text-xs text-muted">
+        No hay votaciones activas.
+      </p>
+    );
+  }
   return (
     <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <legend className="sr-only">Selecciona votación</legend>
-      {Object.values(VOTINGS).map((v) => {
+      {votings.map((v) => {
         const selected = value === v.id;
         return (
           <label
@@ -35,7 +43,7 @@ export function VotingSelector({ value, onChange }: Props) {
               className="flex h-16 w-16 items-center justify-center rounded-full font-bold text-white"
               style={{ background: v.accent }}
             >
-              {v.shortName}
+              {v.short_name}
             </div>
             <div>
               <p className="text-base font-semibold">{v.name}</p>

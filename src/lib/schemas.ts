@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { getQbIds, TOTAL_QBS } from "@/data/qbs";
-import { VOTING_IDS } from "@/data/votings";
 
 const QB_ID_SET = new Set(getQbIds());
 
@@ -16,7 +15,7 @@ function toTitleCase(s: string): string {
 export const RankingSubmissionSchema = z.object({
   fullName: z.string().trim().min(2).max(30).transform(toTitleCase),
   email: z.string().trim().toLowerCase().email().max(200),
-  voting: z.enum(VOTING_IDS),
+  voting: z.string().uuid(),
   positions: z
     .array(z.string())
     .length(TOTAL_QBS)
@@ -31,5 +30,38 @@ export const RankingSubmissionSchema = z.object({
 export type RankingSubmission = z.infer<typeof RankingSubmissionSchema>;
 
 export const AdminLoginSchema = z.object({
+  password: z.string().min(1).max(200),
+});
+
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
+export const VotingCreateSchema = z.object({
+  slug: z.string().trim().min(2).max(40).regex(SLUG_RE, {
+    message: "slug must be lowercase alphanumeric with hyphens",
+  }),
+  name: z.string().trim().min(2).max(60),
+  shortName: z.string().trim().min(2).max(8),
+  description: z.string().trim().min(2).max(140),
+  accent: z.string().regex(HEX_COLOR_RE, { message: "accent must be #RRGGBB" }),
+  accentDark: z.string().regex(HEX_COLOR_RE, { message: "accentDark must be #RRGGBB" }),
+  logoUrl: z.string().trim().min(1).max(500),
+  voterPassword: z.string().min(4).max(100),
+  adminPassword: z.string().min(4).max(100),
+});
+
+export type VotingCreateInput = z.infer<typeof VotingCreateSchema>;
+
+export const VotingUpdateSchema = VotingCreateSchema.partial().extend({
+  active: z.boolean().optional(),
+});
+
+export type VotingUpdateInput = z.infer<typeof VotingUpdateSchema>;
+
+export const VotingReorderSchema = z.object({
+  orderedIds: z.array(z.string().uuid()).min(1).max(64),
+});
+
+export const VotingAccessSchema = z.object({
   password: z.string().min(1).max(200),
 });
