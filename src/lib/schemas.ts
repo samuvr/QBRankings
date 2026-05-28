@@ -15,7 +15,7 @@ function toTitleCase(s: string): string {
 export const RankingSubmissionSchema = z.object({
   fullName: z.string().trim().min(2).max(30).transform(toTitleCase),
   email: z.string().trim().toLowerCase().email().max(200),
-  voting: z.string().uuid(),
+  voting: z.guid(),
   positions: z
     .array(z.string())
     .length(TOTAL_QBS)
@@ -59,7 +59,7 @@ export const VotingUpdateSchema = VotingCreateSchema.partial().extend({
 export type VotingUpdateInput = z.infer<typeof VotingUpdateSchema>;
 
 export const VotingReorderSchema = z.object({
-  orderedIds: z.array(z.string().uuid()).min(1).max(64),
+  orderedIds: z.array(z.guid()).min(1).max(64),
 });
 
 export const VotingAccessSchema = z.object({
