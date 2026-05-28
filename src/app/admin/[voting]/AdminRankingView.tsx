@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { getQbById } from "@/data/qbs";
 import { getTeamByAbbr } from "@/data/teams";
@@ -15,6 +16,8 @@ type Voter = {
   fullName: string;
   email: string;
   updatedAt: string;
+  meanDeviation: number;
+  rankPosition: number;
 };
 
 type Props = {
@@ -122,21 +125,42 @@ export function AdminRankingView({
 
       <section aria-label="Votantes">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Votantes ({voters.length})
+          Votantes ({voters.length}) · clasificación por desviación
         </h2>
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           {voters.map((v) => (
             <li
               key={v.id}
-              className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-xs"
+              className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-xs"
             >
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{v.fullName}</p>
-                <p className="truncate text-muted">{v.email}</p>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="w-8 text-right font-mono text-base font-bold text-muted">
+                  {v.rankPosition.toString().padStart(2, "0")}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{v.fullName}</p>
+                  <p className="truncate text-muted">{v.email}</p>
+                </div>
               </div>
-              <span className="text-muted">
-                {new Date(v.updatedAt).toLocaleString("es-ES")}
-              </span>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="font-mono text-sm font-bold">
+                    {v.meanDeviation.toLocaleString("es-ES", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">
+                    desv. media
+                  </p>
+                </div>
+                <Link
+                  href={`/admin/${voting.slug}/votantes/${v.id}`}
+                  className="font-subhead rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-[11px] uppercase tracking-wide transition hover:border-foreground"
+                >
+                  Ver ranking
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

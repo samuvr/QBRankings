@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getRankingsByVoting, getVotingBySlug } from "@/lib/db/client";
 import { computeGlobalRanking } from "@/lib/ranking-algorithm";
+import { computeDeviation } from "@/lib/ranking-deviation";
 import { getAllQbs } from "@/data/qbs";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { hasVotingAdminAccess } from "@/lib/voting-access";
@@ -79,12 +80,17 @@ export default async function AdminDashboardPage({
           result={result}
           initialMode={initialMode}
           initialRound={initialRound}
-          voters={rows.map((r) => ({
-            id: r.id,
-            fullName: r.full_name,
-            email: r.email,
-            updatedAt: r.updated_at,
-          }))}
+          voters={rows
+            .map((r) => ({
+              id: r.id,
+              fullName: r.full_name,
+              email: r.email,
+              updatedAt: r.updated_at,
+              meanDeviation: computeDeviation(r.positions, result.ranking)
+                .meanAbsDeviation,
+            }))
+            .sort((a, b) => a.meanDeviation - b.meanDeviation)
+            .map((v, idx) => ({ ...v, rankPosition: idx + 1 }))}
         />
       )}
     </main>

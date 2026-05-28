@@ -1,0 +1,54 @@
+import type { GlobalRankingEntry } from "./ranking-algorithm";
+
+export type DeviationEntry = {
+  qbId: string;
+  voterPos: number;
+  consensusPos: number;
+  diff: number;
+};
+
+export type DeviationResult = {
+  meanAbsDeviation: number;
+  perQb: DeviationEntry[];
+};
+
+export function computeDeviation(
+  voterPositions: string[],
+  consensusRanking: GlobalRankingEntry[],
+): DeviationResult {
+  const consensusPosByQb = new Map<string, number>();
+  for (const entry of consensusRanking) {
+    consensusPosByQb.set(entry.qbId, entry.finalPosition);
+  }
+
+  const perQb: DeviationEntry[] = [];
+  let totalAbs = 0;
+  let count = 0;
+  voterPositions.forEach((qbId, idx) => {
+    const consensusPos = consensusPosByQb.get(qbId);
+    if (consensusPos === undefined) return;
+    const voterPos = idx + 1;
+    const diff = consensusPos - voterPos;
+    perQb.push({ qbId, voterPos, consensusPos, diff });
+    totalAbs += Math.abs(diff);
+    count += 1;
+  });
+
+  return {
+    meanAbsDeviation: count === 0 ? 0 : totalAbs / count,
+    perQb,
+  };
+}
+
+export function topOverratedUnderrated(
+  perQb: DeviationEntry[],
+  n = 3,
+): { overrated: DeviationEntry[]; underrated: DeviationEntry[] } {
+  const sortedDesc = [...perQb].sort((a, b) => b.diff - a.diff);
+  const overrated = sortedDesc.filter((e) => e.diff > 0).slice(0, n);
+  const underrated = sortedDesc
+    .filter((e) => e.diff < 0)
+    .slice(-n)
+    .reverse();
+  return { overrated, underrated };
+}
