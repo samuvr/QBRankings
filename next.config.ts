@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "a.espncdn.com",
         pathname: "/i/teamlogos/nfl/500/**",
       },
+      {
+        protocol: "https",
+        hostname: "pbs.twimg.com",
+        pathname: "/profile_images/**",
+      },
     ],
   },
 };
