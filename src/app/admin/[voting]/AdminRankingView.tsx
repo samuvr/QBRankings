@@ -146,11 +146,25 @@ export function AdminRankingView({
 }
 
 function RankingList({ result }: { result: GlobalRankingResult }) {
+  const historyByQb = useMemo(() => {
+    const map = new Map<string, Array<{ roundIndex: number; points: number }>>();
+    for (const round of result.rounds) {
+      for (const score of round.scores) {
+        if (score.points <= 0) continue;
+        const arr = map.get(score.qbId) ?? [];
+        arr.push({ roundIndex: round.roundIndex, points: score.points });
+        map.set(score.qbId, arr);
+      }
+    }
+    return map;
+  }, [result.rounds]);
+
   return (
     <ol className="space-y-2">
       {result.ranking.map((entry) => {
         const qb = getQbById(entry.qbId);
         const team = qb ? getTeamByAbbr(qb.teamAbbr) : null;
+        const history = historyByQb.get(entry.qbId) ?? [];
         return (
           <li
             key={entry.qbId}
@@ -162,9 +176,31 @@ function RankingList({ result }: { result: GlobalRankingResult }) {
             {team && qb && <TeamMark abbr={qb.teamAbbr} size={36} />}
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold">{qb?.name ?? entry.qbId}</p>
-              <p className="truncate text-xs text-muted">
-                {qb?.teamAbbr} · ronda {entry.roundIndex + 1} · {entry.pointsInRound} pts
-              </p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                <span>
+                  {qb?.teamAbbr} · ronda {entry.roundIndex + 1} · {entry.pointsInRound} pts
+                </span>
+                {history.length > 0 && (
+                  <span className="flex flex-wrap items-center gap-1">
+                    {history.map((h) => {
+                      const isElim = h.roundIndex === entry.roundIndex;
+                      return (
+                        <span
+                          key={h.roundIndex}
+                          className={`rounded-md border px-1.5 py-0.5 font-mono text-[10px] ${
+                            isElim
+                              ? "border-foreground/40 bg-surface-2 text-foreground"
+                              : "border-border"
+                          }`}
+                          title={`Ronda ${h.roundIndex + 1}: ${h.points} pts`}
+                        >
+                          R{h.roundIndex + 1}:{h.points}
+                        </span>
+                      );
+                    })}
+                  </span>
+                )}
+              </div>
             </div>
           </li>
         );
