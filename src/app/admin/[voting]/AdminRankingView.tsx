@@ -118,7 +118,7 @@ export function AdminRankingView({
           checked={showAnya}
           onChange={(e) => setShowAnya(e.target.checked)}
         />
-        <span>Comparar con ANY/A</span>
+        <span>Comparar con ANY/A (Últimas 3 temporadas)</span>
         <span
           className="cursor-help text-muted"
           tabIndex={0}
