@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { getQbById } from "@/data/qbs";
 import { getTeamByAbbr } from "@/data/teams";
+import { computeAnyaRanking } from "@/data/anya";
 import { TeamMark } from "@/components/TeamMark";
 import type { VotingPublic } from "@/lib/db/client";
 import type { GlobalRankingResult } from "@/lib/ranking-algorithm";
@@ -40,6 +41,7 @@ export function AdminRankingView({
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [round, setRound] = useState(initialRound);
+  const [showAnya, setShowAnya] = useState(false);
 
   const totalRounds = result.rounds.length;
 
@@ -110,14 +112,32 @@ export function AdminRankingView({
         </button>
       </div>
 
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={showAnya}
+          onChange={(e) => setShowAnya(e.target.checked)}
+        />
+        <span>Comparar con ANY/A</span>
+        <span
+          className="cursor-help text-muted"
+          tabIndex={0}
+          title="Yardas netas ajustadas por intento de pase es una estadística avanzada que mide la eficiencia de un QB teniendo en cuenta yardas de pase, touchdowns, intercepciones y sacks en una única métrica. "
+          aria-label="Yardas netas ajustadas por intento de pase es una estadística avanzada que mide la eficiencia de un QB teniendo en cuenta yardas de pase, touchdowns, intercepciones y sacks en una única métrica. "
+        >
+          ⓘ
+        </span>
+      </label>
+
       {mode === "list" ? (
-        <RankingList result={result} />
+        <RankingList result={result} showAnya={showAnya} />
       ) : (
         <RankingStream
           result={result}
           round={round}
           totalRounds={totalRounds}
           accent={voting.accent}
+          showAnya={showAnya}
           onPrev={() => setRoundAndSync(Math.max(0, round - 1))}
           onNext={() => setRoundAndSync(Math.min(totalRounds - 1, round + 1))}
         />
@@ -169,7 +189,13 @@ export function AdminRankingView({
   );
 }
 
-function RankingList({ result }: { result: GlobalRankingResult }) {
+function RankingList({
+  result,
+  showAnya,
+}: {
+  result: GlobalRankingResult;
+  showAnya: boolean;
+}) {
   const historyByQb = useMemo(() => {
     const map = new Map<string, Array<{ roundIndex: number; points: number }>>();
     for (const round of result.rounds) {
@@ -226,6 +252,9 @@ function RankingList({ result }: { result: GlobalRankingResult }) {
                 )}
               </div>
             </div>
+            {showAnya && (
+              <AnyaBadge qbId={entry.qbId} votePosition={entry.finalPosition} />
+            )}
           </li>
         );
       })}
@@ -238,6 +267,7 @@ function RankingStream({
   round,
   totalRounds,
   accent,
+  showAnya,
   onPrev,
   onNext,
 }: {
@@ -245,6 +275,7 @@ function RankingStream({
   round: number;
   totalRounds: number;
   accent: string;
+  showAnya: boolean;
   onPrev: () => void;
   onNext: () => void;
 }) {
@@ -349,6 +380,9 @@ function RankingStream({
                   )}
                 </div>
               </div>
+              {showAnya && (
+                <AnyaBadge qbId={entry.qbId} votePosition={entry.finalPosition} />
+              )}
             </li>
           );
         })}
@@ -364,6 +398,72 @@ function RankingStream({
             }}
           />
         ))}
+      </div>
+    </div>
+  );
+}
+
+const ANYA_RANKING = computeAnyaRanking();
+
+// Bloque comparativo ANY/A mostrado a la derecha de cada QB: valor ANY/A, puesto
+// en el ranking de ANY/A y diferencia respecto al puesto de la votación.
+function AnyaBadge({
+  qbId,
+  votePosition,
+}: {
+  qbId: string;
+  votePosition: number;
+}) {
+  const info = ANYA_RANKING.get(qbId);
+
+  // Sin dato de ANY/A (p.ej. Willis): solo N/D, sin puesto ni diferencia.
+  if (!info || info.value === null || info.rank === null) {
+    return (
+      <div className="shrink-0 text-right text-xs text-muted">
+        <p className="font-mono font-bold">N/D</p>
+        <p className="text-[10px] uppercase tracking-wide">ANY/A</p>
+      </div>
+    );
+  }
+
+  const diff = votePosition - info.rank;
+  const value = info.value.toLocaleString("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  let diffEl: ReactNode;
+  if (diff === 0) {
+    diffEl = (
+      <span className="rounded-md border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted">
+        =
+      </span>
+    );
+  } else {
+    const color = diff > 0 ? "#16a34a" : "#dc2626";
+    const sign = diff > 0 ? "+" : "−";
+    const title =
+      diff > 0
+        ? `Infravalorado por la votación (${Math.abs(diff)} puestos por debajo de su ANY/A)`
+        : `Sobrevalorado por la votación (${Math.abs(diff)} puestos por encima de su ANY/A)`;
+    diffEl = (
+      <span
+        className="rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold"
+        style={{ borderColor: color, color }}
+        title={title}
+      >
+        {sign}
+        {Math.abs(diff)}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+      <p className="font-mono text-sm font-bold">{value}</p>
+      <div className="flex items-center gap-1 text-[10px] text-muted">
+        <span className="font-mono">#{info.rank}</span>
+        {diffEl}
       </div>
     </div>
   );
