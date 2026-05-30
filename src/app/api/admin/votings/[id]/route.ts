@@ -57,6 +57,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     accentDark: data.accentDark,
     logoUrl: data.logoUrl,
     active: data.active,
+    publicAccess: data.publicAccess,
     voterPasswordHash,
     adminPasswordHash,
   });

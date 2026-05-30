@@ -33,9 +33,14 @@ export async function POST(req: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const ok = await verifyPassword(data.password, voting.voter_password_hash);
-  if (!ok) {
-    return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
+  if (!voting.public_access) {
+    if (!data.password) {
+      return NextResponse.json({ error: "Contraseña requerida" }, { status: 400 });
+    }
+    const ok = await verifyPassword(data.password, voting.voter_password_hash);
+    if (!ok) {
+      return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
+    }
   }
 
   await setVoterCookie(voting.id);

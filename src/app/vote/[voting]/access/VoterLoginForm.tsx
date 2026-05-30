@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Props = { slug: string };
+type Props = { slug: string; isPublic: boolean };
 
-export function VoterLoginForm({ slug }: Props) {
+export function VoterLoginForm({ slug, isPublic }: Props) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -16,14 +16,15 @@ export function VoterLoginForm({ slug }: Props) {
     setError(null);
     setBusy(true);
     try {
+      const body = isPublic ? {} : { password };
       const res = await fetch(`/api/voting/${slug}/access`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? `Error ${res.status}`);
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? `Error ${res.status}`);
       }
       router.push(`/vote/${slug}`);
       router.refresh();
@@ -36,15 +37,17 @@ export function VoterLoginForm({ slug }: Props) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-foreground"
-        placeholder="Contraseña"
-        autoComplete="current-password"
-        required
-      />
+      {!isPublic && (
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-foreground"
+          placeholder="Contraseña"
+          autoComplete="current-password"
+          required
+        />
+      )}
       {error && (
         <p className="rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-200">{error}</p>
       )}
@@ -53,7 +56,7 @@ export function VoterLoginForm({ slug }: Props) {
         disabled={busy}
         className="rounded-xl bg-foreground px-4 py-3 text-base font-bold text-background transition disabled:opacity-50"
       >
-        {busy ? "Entrando…" : "Entrar"}
+        {busy ? "Entrando…" : isPublic ? "Continuar" : "Entrar"}
       </button>
     </form>
   );

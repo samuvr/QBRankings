@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { VotingAccessSchema } from "@/lib/schemas";
+import { PasswordRequiredSchema } from "@/lib/schemas";
 import { getVotingById } from "@/lib/db/client";
 import { setVotingAdminCookie, verifyPassword } from "@/lib/voting-access";
 
@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
 
   let data;
   try {
-    data = VotingAccessSchema.parse(body);
+    data = PasswordRequiredSchema.parse(body);
   } catch (err) {
     if (err instanceof ZodError) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });

@@ -33,6 +33,7 @@ export function VotingForm(props: Props) {
   const [voterPassword, setVoterPassword] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [active, setActive] = useState(initial?.active ?? true);
+  const [publicAccess, setPublicAccess] = useState(initial?.public_access ?? false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,14 +55,18 @@ export function VotingForm(props: Props) {
         accent,
         accentDark,
         logoUrl: logoUrl.trim(),
+        publicAccess,
       };
       if (voterPassword) body.voterPassword = voterPassword;
       if (adminPassword) body.adminPassword = adminPassword;
       if (props.mode === "edit") body.active = active;
 
       if (props.mode === "create") {
-        if (!voterPassword || !adminPassword) {
-          throw new Error("Las contraseñas son obligatorias al crear");
+        if (!publicAccess && !voterPassword) {
+          throw new Error("La contraseña de votante es obligatoria en votaciones no públicas");
+        }
+        if (!adminPassword) {
+          throw new Error("La contraseña de administrador es obligatoria al crear");
         }
       }
 
@@ -172,21 +177,32 @@ export function VotingForm(props: Props) {
         />
       </Field>
 
-      <Field
-        label="Contraseña de votante"
-        hint={props.mode === "edit" ? "Déjala vacía para no cambiarla" : undefined}
-      >
+      <label className="flex items-center gap-2 text-sm">
         <input
-          type="text"
-          value={voterPassword}
-          onChange={(e) => setVoterPassword(e.target.value)}
-          minLength={props.mode === "create" ? 4 : 0}
-          required={props.mode === "create"}
-          className={inputCls}
-          placeholder="••••••••"
-          autoComplete="off"
+          type="checkbox"
+          checked={publicAccess}
+          onChange={(e) => setPublicAccess(e.target.checked)}
         />
-      </Field>
+        Acceso público (sin contraseña de votante)
+      </label>
+
+      {!publicAccess && (
+        <Field
+          label="Contraseña de votante"
+          hint={props.mode === "edit" ? "Déjala vacía para no cambiarla" : undefined}
+        >
+          <input
+            type="text"
+            value={voterPassword}
+            onChange={(e) => setVoterPassword(e.target.value)}
+            minLength={props.mode === "create" ? 4 : 0}
+            required={props.mode === "create" && !publicAccess}
+            className={inputCls}
+            placeholder="••••••••"
+            autoComplete="off"
+          />
+        </Field>
+      )}
 
       <Field
         label="Contraseña de admin de votación"

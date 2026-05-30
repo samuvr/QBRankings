@@ -46,7 +46,8 @@ export const VotingCreateSchema = z.object({
   accent: z.string().regex(HEX_COLOR_RE, { message: "accent must be #RRGGBB" }),
   accentDark: z.string().regex(HEX_COLOR_RE, { message: "accentDark must be #RRGGBB" }),
   logoUrl: z.string().trim().min(1).max(500),
-  voterPassword: z.string().min(4).max(100),
+  publicAccess: z.boolean().optional().default(false),
+  voterPassword: z.string().min(4).max(100).optional(),
   adminPassword: z.string().min(4).max(100),
 });
 
@@ -54,6 +55,7 @@ export type VotingCreateInput = z.infer<typeof VotingCreateSchema>;
 
 export const VotingUpdateSchema = VotingCreateSchema.partial().extend({
   active: z.boolean().optional(),
+  publicAccess: z.boolean().optional(),
 });
 
 export type VotingUpdateInput = z.infer<typeof VotingUpdateSchema>;
@@ -63,5 +65,9 @@ export const VotingReorderSchema = z.object({
 });
 
 export const VotingAccessSchema = z.object({
+  password: z.string().max(200).optional(),
+});
+
+export const PasswordRequiredSchema = z.object({
   password: z.string().min(1).max(200),
 });
