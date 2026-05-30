@@ -14,7 +14,7 @@ export const QBS: Qb[] = [
   { id: "bryce-young", name: "Bryce Young", teamAbbr: "CAR" },
   { id: "caleb-williams", name: "Caleb Williams", teamAbbr: "CHI" },
   { id: "joe-burrow", name: "Joe Burrow", teamAbbr: "CIN" },
-  { id: "cle-qb-room", name: "Browns QB Room", teamAbbr: "CLE" },
+  { id: "cle-qb-room", name: "Deshaun Watson", teamAbbr: "CLE" },
   { id: "dak-prescott", name: "Dak Prescott", teamAbbr: "DAL" },
   { id: "bo-nix", name: "Bo Nix", teamAbbr: "DEN" },
   { id: "jared-goff", name: "Jared Goff", teamAbbr: "DET" },
