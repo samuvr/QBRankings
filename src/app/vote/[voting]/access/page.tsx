@@ -20,6 +20,8 @@ export default async function VoterAccessPage({ params }: { params: Params }) {
     redirect(`/vote/${slug}`);
   }
 
+  const isPublic = voting.public_access;
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-5 py-10">
       <header className="mb-6 text-center">
@@ -31,10 +33,12 @@ export default async function VoterAccessPage({ params }: { params: Params }) {
         </p>
         <h1 className="mt-1 text-3xl font-black">Acceso votante</h1>
         <p className="mt-2 text-sm text-muted">
-          Introduce la contraseña para empezar a votar.
+          {isPublic
+            ? "Esta votación es pública. Pulsa continuar para empezar."
+            : "Introduce la contraseña para empezar a votar."}
         </p>
       </header>
-      <VoterLoginForm slug={voting.slug} />
+      <VoterLoginForm slug={voting.slug} isPublic={isPublic} />
     </main>
   );
 }

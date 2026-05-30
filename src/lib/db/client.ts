@@ -15,6 +15,7 @@ export type VotingRow = {
   admin_password_hash: string;
   position: number;
   active: boolean;
+  public_access: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -41,7 +42,7 @@ function stripSecrets(row: VotingRow): VotingPublic {
 export async function getActiveVotings(): Promise<VotingPublic[]> {
   const r = await sql<VotingRow>`
     SELECT id, slug, name, short_name, description, accent, accent_dark, logo_url,
-           voter_password_hash, admin_password_hash, position, active, created_at, updated_at
+           voter_password_hash, admin_password_hash, position, active, public_access, created_at, updated_at
     FROM votings WHERE active = TRUE ORDER BY position ASC, created_at ASC;
   `;
   return r.rows.map(stripSecrets);
@@ -50,7 +51,7 @@ export async function getActiveVotings(): Promise<VotingPublic[]> {
 export async function getAllVotingsForAdmin(): Promise<VotingPublic[]> {
   const r = await sql<VotingRow>`
     SELECT id, slug, name, short_name, description, accent, accent_dark, logo_url,
-           voter_password_hash, admin_password_hash, position, active, created_at, updated_at
+           voter_password_hash, admin_password_hash, position, active, public_access, created_at, updated_at
     FROM votings
     ORDER BY position ASC, created_at ASC;
   `;
@@ -60,7 +61,7 @@ export async function getAllVotingsForAdmin(): Promise<VotingPublic[]> {
 export async function getVotingBySlug(slug: string): Promise<VotingRow | null> {
   const r = await sql<VotingRow>`
     SELECT id, slug, name, short_name, description, accent, accent_dark, logo_url,
-           voter_password_hash, admin_password_hash, position, active, created_at, updated_at
+           voter_password_hash, admin_password_hash, position, active, public_access, created_at, updated_at
     FROM votings WHERE slug = ${slug} LIMIT 1;
   `;
   return r.rows[0] ?? null;
@@ -69,7 +70,7 @@ export async function getVotingBySlug(slug: string): Promise<VotingRow | null> {
 export async function getVotingById(id: string): Promise<VotingRow | null> {
   const r = await sql<VotingRow>`
     SELECT id, slug, name, short_name, description, accent, accent_dark, logo_url,
-           voter_password_hash, admin_password_hash, position, active, created_at, updated_at
+           voter_password_hash, admin_password_hash, position, active, public_access, created_at, updated_at
     FROM votings WHERE id = ${id} LIMIT 1;
   `;
   return r.rows[0] ?? null;
@@ -85,16 +86,18 @@ export async function createVoting(input: {
   logoUrl: string;
   voterPasswordHash: string;
   adminPasswordHash: string;
+  publicAccess?: boolean;
 }): Promise<{ id: string }> {
+  const publicAccess = input.publicAccess ?? false;
   const r = await sql<{ id: string; nextpos: number }>`
     WITH next AS (SELECT COALESCE(MAX(position), -1) + 1 AS nextpos FROM votings)
     INSERT INTO votings
       (slug, name, short_name, description, accent, accent_dark, logo_url,
-       voter_password_hash, admin_password_hash, position, active)
+       voter_password_hash, admin_password_hash, position, active, public_access)
     SELECT ${input.slug}, ${input.name}, ${input.shortName}, ${input.description},
            ${input.accent}, ${input.accentDark}, ${input.logoUrl},
            ${input.voterPasswordHash}, ${input.adminPasswordHash},
-           next.nextpos, TRUE
+           next.nextpos, TRUE, ${publicAccess}
     FROM next
     RETURNING id, position AS nextpos;
   `;
@@ -110,6 +113,7 @@ export type VotingUpdate = {
   accentDark?: string;
   logoUrl?: string;
   active?: boolean;
+  publicAccess?: boolean;
   voterPasswordHash?: string;
   adminPasswordHash?: string;
 };
@@ -125,6 +129,7 @@ export async function updateVoting(id: string, patch: VotingUpdate): Promise<voi
       accent_dark = COALESCE(${patch.accentDark ?? null}, accent_dark),
       logo_url = COALESCE(${patch.logoUrl ?? null}, logo_url),
       active = COALESCE(${patch.active ?? null}, active),
+      public_access = COALESCE(${patch.publicAccess ?? null}, public_access),
       voter_password_hash = COALESCE(${patch.voterPasswordHash ?? null}, voter_password_hash),
       admin_password_hash = COALESCE(${patch.adminPasswordHash ?? null}, admin_password_hash),
       updated_at = now()

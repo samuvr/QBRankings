@@ -37,8 +37,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Slug ya en uso" }, { status: 409 });
   }
 
+  const isPublic = data.publicAccess ?? false;
+
+  if (!isPublic && !data.voterPassword) {
+    return NextResponse.json(
+      { error: "La contraseña de votante es obligatoria en votaciones no públicas" },
+      { status: 400 },
+    );
+  }
+
   const [voterPasswordHash, adminPasswordHash] = await Promise.all([
-    hashPassword(data.voterPassword),
+    isPublic && !data.voterPassword
+      ? hashPassword(crypto.randomUUID())
+      : hashPassword(data.voterPassword!),
     hashPassword(data.adminPassword),
   ]);
 
@@ -52,6 +63,7 @@ export async function POST(req: Request) {
     logoUrl: data.logoUrl,
     voterPasswordHash,
     adminPasswordHash,
+    publicAccess: isPublic,
   });
 
   return NextResponse.json({ id });

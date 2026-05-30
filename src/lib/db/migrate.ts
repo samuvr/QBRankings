@@ -60,11 +60,17 @@ async function ensureVotingsTable() {
       admin_password_hash   TEXT NOT NULL,
       position              INT NOT NULL DEFAULT 0,
       active                BOOLEAN NOT NULL DEFAULT TRUE,
+      public_access         BOOLEAN NOT NULL DEFAULT FALSE,
       created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `;
   await sql`CREATE INDEX IF NOT EXISTS votings_position_idx ON votings (position);`;
+  // Migración idempotente: añadir columna en tablas existentes
+  await sql`
+    ALTER TABLE votings ADD COLUMN IF NOT EXISTS
+      public_access BOOLEAN NOT NULL DEFAULT FALSE;
+  `;
 }
 
 async function ensureRankingsTable() {
